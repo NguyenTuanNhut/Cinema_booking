@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Chọn ghế</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .seat-map { display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; max-width: 500px; margin: 0 auto; }
+        .seat { width: 40px; height: 40px; border: 1px solid #ccc; text-align: center; line-height: 40px; cursor: pointer; border-radius: 5px; }
+        .seat.selected { background-color: #28a745; color: white; border-color: #28a745; }
+        .seat.booked { background-color: #dc3545; color: white; cursor: not-allowed; opacity: 0.6; } /* Đã đặt: Màu đỏ */
+        input[type="checkbox"] { display: none; }
+        .screen { background: #333; color: white; text-align: center; padding: 5px; margin-bottom: 30px; border-radius: 5px; font-weight: bold; }
+        .legend { display: flex; justify-content: center; gap: 20px; margin-top: 20px; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .box { width: 20px; height: 20px; border-radius: 3px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body class="container mt-5">
+    <h2 class="text-center">Chọn ghế cho: <span th:text="${showtime.movie.title}"></span></h2>
+    <p class="text-center text-muted">Suất chiếu: <span th:text="${#temporals.format(showtime.startTime, 'HH:mm dd/MM/yyyy')}"></span> - <span th:text="${showtime.room.name}"></span></p>
+
+    <div class="screen shadow-sm">MÀN HÌNH</div>
+
+    <form th:action="@{/bookings/create}" method="post" onsubmit="return validateSelection()">
+        <input type="hidden" name="showtimeId" th:value="${showtime.id}">
+
+        <div class="seat-map mb-4">
+            <div th:each="seat : ${seats}">
+                <!-- Kiểm tra xem ghế đã được đặt chưa -->
+                <label th:class="${#lists.contains(bookedSeatIds, seat.id) ? 'seat booked' : 'seat'}">
+                    <input type="checkbox" name="seatIds" th:value="${seat.id}"
+                           th:disabled="${#lists.contains(bookedSeatIds, seat.id)}"
+                           onchange="this.parentElement.classList.toggle('selected')">
+                    <span th:text="${seat.seatNumber}"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="legend mb-4">
+            <div class="legend-item"><div class="box"></div> Còn trống</div>
+            <div class="legend-item"><div class="box" style="background: #28a745;"></div> Đang chọn</div>
+            <div class="legend-item"><div class="box" style="background: #dc3545; opacity: 0.6;"></div> Đã bán</div>
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="btn btn-success btn-lg px-5 shadow">Xác nhận đặt vé</button>
+            <a href="/movies" class="btn btn-secondary btn-lg ms-3">Quay lại</a>
+        </div>
+    </form>
+
+    <script>
+        function validateSelection() {
+            const checked = document.querySelectorAll('input[name="seatIds"]:checked');
+            if (checked.length === 0) {
+                alert("Vui lòng chọn ít nhất một ghế!");
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

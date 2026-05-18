@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Chi tiết phim</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <img th:src="${movie.poster}" class="img-fluid rounded shadow" alt="Poster">
+        </div>
+        <div class="col-md-8">
+            <h1 th:text="${movie.title}"></h1>
+            <p class="text-muted" th:text="${movie.genre.name}"></p>
+            <p><strong>Thời lượng:</strong> <span th:text="${movie.duration}"></span> phút</p>
+            <p th:text="${movie.description}"></p>
+
+            <h4 class="mt-4">Lịch chiếu</h4>
+            <div class="list-group mt-2">
+                <a th:each="st : ${showtimes}"
+                   th:href="@{'/bookings/select-seats/' + ${st.id}}"
+                   class="list-group-item list-group-item-action">
+                    <span th:text="${#temporals.format(st.startTime, 'dd/MM/yyyy HH:mm')}"></span>
+                    - <span th:text="${st.room.name}"></span>
+                </a>
+                <p th:if="${#lists.isEmpty(showtimes)}" class="text-danger">Hiện chưa có suất chiếu nào.</p>
+            </div>
+            <a href="/movies" class="btn btn-secondary mt-3">Quay lại</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Thêm suất chiếu</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="container mt-5">
+    <h2>Thêm suất chiếu mới</h2>
+
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <form th:action="@{/admin/showtimes/save}" method="post" class="mt-4 card p-4 shadow">
+        <div class="mb-3">
+            <label class="form-label">Chọn phim</label>
+            <select name="movieId" class="form-select" required>
+                <option th:each="m : ${movies}" th:value="${m.id}" th:text="${m.title}"></option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Chọn phòng</label>
+            <select name="roomId" class="form-select" required>
+                <option th:each="r : ${rooms}" th:value="${r.id}" th:text="${r.name}"></option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Giờ bắt đầu</label>
+            <input type="datetime-local" name="startTime" class="form-control" required>
+        </div>
+
+        <div class="text-muted mb-3 small">
+            * Hệ thống sẽ tự động cộng thêm thời lượng phim và 15 phút dọn dẹp để kiểm tra trùng lịch.
+        </div>
+
+        <button type="submit" class="btn btn-primary">Lưu suất chiếu</button>
+        <a href="/admin/showtimes" class="btn btn-secondary">Hủy</a>
+    </form>
+</body>
+</html>
