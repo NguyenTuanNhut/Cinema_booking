@@ -8,12 +8,20 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface TicketRepository extends JpaRepository<Ticket, Long> {
+public interface TicketRepository
+        extends JpaRepository<Ticket, Long> {
 
-    boolean existsByShowtimeAndSeat(Showtime showtime, Seat seat);
+    boolean existsByShowtimeAndSeat(
+            Showtime showtime,
+            Seat seat
+    );
 
-    List<Ticket> findByBooking(Booking booking);
+    List<Ticket> findByBooking(
+            Booking booking
+    );
 
-    // Lấy danh sách tất cả các vé của một suất chiếu để biết ghế nào đã bán
-    List<Ticket> findByShowtimeId(Long showtimeId);
+    // lấy ghế đã đặt của suất chiếu
+    List<Ticket> findByShowtimeId(
+            Long showtimeId
+    );
 }

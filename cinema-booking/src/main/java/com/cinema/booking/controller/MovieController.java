@@ -24,14 +24,15 @@ public class MovieController {
 
     @GetMapping
     public String listMovies(Model model) {
-        List<Movie> movies = movieRepository.findAll();
+        List<Movie> movies = movieRepository.findAllActive();
         model.addAttribute("movies", movies);
         return "movies/list";
     }
 
     @GetMapping("/{id}")
     public String movieDetails(@PathVariable Long id, Model model) {
-        Movie movie = movieRepository.findById(id).orElseThrow();
+        Movie movie = movieRepository.findByIdIfActive(id)
+                .orElseThrow(() -> new RuntimeException("Phim không tồn tại hoặc đã bị xóa"));
         List<Showtime> showtimes = showtimeRepository.findByMovieAndStartTimeAfter(movie, LocalDateTime.now());
         
         model.addAttribute("movie", movie);

@@ -32,7 +32,7 @@ public class BookingServiceImpl implements BookingService {
     public Booking createBooking(Long userId, BookingRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
                 .orElseThrow(() -> new RuntimeException("Showtime not found"));
 
@@ -40,9 +40,9 @@ public class BookingServiceImpl implements BookingService {
         booking.setBookingCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         booking.setUser(user);
         booking.setShowtime(showtime);
-        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setStatus(BookingStatus.PENDING); // reservation pending until payment or staff confirm
         booking.setTotalPrice(BigDecimal.ZERO);
-        
+
         Booking savedBooking = bookingRepository.save(booking);
         BigDecimal totalPrice = BigDecimal.ZERO;
         BigDecimal ticketPrice = new BigDecimal("50000");
@@ -50,20 +50,20 @@ public class BookingServiceImpl implements BookingService {
         for (Long seatId : request.getSeatIds()) {
             Seat seat = seatRepository.findById(seatId)
                     .orElseThrow(() -> new RuntimeException("Seat not found: " + seatId));
-            
+
             Ticket ticket = new Ticket();
             ticket.setBooking(savedBooking);
             ticket.setShowtime(showtime);
             ticket.setSeat(seat);
             ticket.setPrice(ticketPrice);
-            ticket.setStatus(TicketStatus.ACTIVE);
-            
+            ticket.setStatus(com.cinema.booking.entity.enums.TicketStatus.PENDING);
+
             try {
                 ticketRepository.save(ticket);
             } catch (Exception e) {
                 throw new RuntimeException("Ghế " + seat.getSeatNumber() + " đã được đặt!");
             }
-            
+
             totalPrice = totalPrice.add(ticketPrice);
         }
 
@@ -92,9 +92,9 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingHistoryResponse> getBookingHistory(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         List<Booking> bookings = bookingRepository.findByUser(user);
-        
+
         return bookings.stream().map(b -> {
             List<Ticket> tickets = ticketRepository.findByBooking(b);
             List<String> seats = tickets.stream()
@@ -112,5 +112,60 @@ public class BookingServiceImpl implements BookingService {
                     .status(b.getStatus().name())
                     .build();
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Booking findByBookingCode(String bookingCode) {
+        return bookingRepository.findByBookingCode(bookingCode)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã đơn: " + bookingCode));
+    }
+
+    @Override
+    @Transactional
+    public void confirmBooking(Long bookingId, Long staffUserId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // set tickets to ACTIVE
+        List<Ticket> tickets = ticketRepository.findByBooking(booking);
+        for (Ticket t : tickets) {
+            t.setStatus(com.cinema.booking.entity.enums.TicketStatus.ACTIVE);
+            ticketRepository.save(t);
+        }
+
+        // set booking status and audit
+        booking.setStatus(com.cinema.booking.entity.enums.BookingStatus.CONFIRMED);
+        com.cinema.booking.entity.User staff = userRepository.findById(staffUserId)
+                .orElse(null);
+        if (staff != null) {
+            booking.setConfirmedBy(staff);
+            booking.setConfirmedAt(java.time.LocalDateTime.now());
+        }
+
+        bookingRepository.save(booking);
+    }
+
+    @Override
+    @Transactional
+    public void expireBooking(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+
+        // Only expire pending bookings
+        if (booking.getStatus() != com.cinema.booking.entity.enums.BookingStatus.PENDING) return;
+
+        // delete tickets
+        List<Ticket> tickets = ticketRepository.findByBooking(booking);
+        ticketRepository.deleteAll(tickets);
+
+        booking.setStatus(com.cinema.booking.entity.enums.BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Booking> getPendingBookings() {
+        return bookingRepository.findByStatus(BookingStatus.PENDING);
     }
 }

@@ -3,11 +3,57 @@
 <head>
     <title>Thông tin phim</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        /* Upload Zone */
+        #uploadZone {
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        #uploadZone:hover {
+            background-color: #e7f3ff;
+            border-color: #0056b3;
+        }
+        #uploadZone.drag-over {
+            background-color: #cfe2ff;
+            border-color: #0d6efd;
+            transform: scale(1.02);
+        }
+        #fileInput {
+            display: none;
+        }
+        #posterPreview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .success-message {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .error-message {
+            color: #721c24;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body class="container mt-5">
-    <h2 th:text="${movie.id == null ? 'Thêm phim mới' : 'Sửa phim'}"></h2>
+    <h2 th:text="${movieDto.id == null ? 'Thêm phim mới' : 'Sửa phim'}"></h2>
 
-    <form th:action="@{/admin/movies/save}" th:object="${movie}" method="post" class="mt-4">
+    <form th:action="@{/admin/movies/save}" th:object="${movieDto}" method="post" class="mt-4">
         <input type="hidden" th:field="*{id}">
 
         <div class="mb-3">
@@ -17,7 +63,7 @@
 
         <div class="mb-3">
             <label class="form-label">Thể loại</label>
-            <select th:field="*{genre.id}" class="form-select">
+            <select th:field="*{genreId}" class="form-select">
                 <option th:each="g : ${genres}" th:value="${g.id}" th:text="${g.name}"></option>
             </select>
         </div>
@@ -32,13 +78,131 @@
             <textarea th:field="*{description}" class="form-control" rows="3"></textarea>
         </div>
 
+        <!-- Upload Poster Section -->
         <div class="mb-3">
-            <label class="form-label">Poster URL</label>
-            <input type="text" th:field="*{poster}" class="form-control">
+            <label class="form-label">Poster (Chọn ảnh từ máy hoặc nhập URL)</label>
+
+            <!-- Upload Zone -->
+            <div id="uploadZone">
+                <div style="font-size: 24px; margin-bottom: 10px;">📸</div>
+                <p><strong>Kéo thả ảnh vào đây</strong> hoặc <span style="color: #0056b3; text-decoration: underline;">click để chọn file</span></p>
+                <small style="color: #666;">Chỉ chấp nhận: JPG, JPEG, PNG, GIF (Tối đa 5MB)</small>
+            </div>
+
+            <!-- File Input (hidden) -->
+            <input type="file" id="fileInput" accept="image/*">
+
+            <!-- Upload Status -->
+            <div id="uploadStatus"></div>
+
+            <!-- Poster Preview -->
+            <div class="text-center">
+                <img id="posterPreview" style="display: none;" alt="Preview">
+            </div>
+
+            <!-- Poster URL Input -->
+            <label class="form-label mt-3">Hoặc nhập URL poster trực tiếp:</label>
+            <input type="text" id="posterUrlInput" class="form-control" placeholder="https://...">
+            <input type="hidden" id="posterUrl" th:field="*{poster}">
         </div>
 
         <button type="submit" class="btn btn-primary">Lưu phim</button>
         <a href="/admin/movies" class="btn btn-secondary">Hủy</a>
     </form>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const posterUrl = document.getElementById('posterUrl');
+        const posterUrlInput = document.getElementById('posterUrlInput');
+        const posterPreview = document.getElementById('posterPreview');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        // Khởi tạo: nếu đã có poster, hiển thị preview
+        window.addEventListener('load', function() {
+            const currentPoster = posterUrl.value;
+            if (currentPoster && currentPoster.trim() !== '') {
+                posterPreview.src = currentPoster;
+                posterPreview.style.display = 'block';
+                posterUrlInput.value = currentPoster;
+            }
+        });
+
+        // Click để chọn file
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        // Drag & drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        // Hàm upload file
+        function handleFileUpload(file) {
+            // Kiểm tra loại file nhanh
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+            if (!allowedTypes.includes(file.type)) {
+                uploadStatus.innerHTML = '<div class="error-message">❌ Chỉ chấp nhận file ảnh: JPG, PNG, GIF</div>';
+                return;
+            }
+
+            uploadStatus.innerHTML = '<div class="text-info">⏳ Đang upload...</div>';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/admin/movies/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success === 'true') {
+                    // Upload thành công
+                    posterUrl.value = data.posterUrl;
+                    posterUrlInput.value = data.posterUrl;
+                    posterPreview.src = data.posterUrl;
+                    posterPreview.style.display = 'block';
+                    uploadStatus.innerHTML = '<div class="success-message">✅ Upload thành công!</div>';
+                } else {
+                    // Lỗi từ server
+                    uploadStatus.innerHTML = '<div class="error-message">❌ ' + (data.message || 'Lỗi upload') + '</div>';
+                }
+            })
+            .catch(error => {
+                uploadStatus.innerHTML = '<div class="error-message">❌ Lỗi: ' + error.message + '</div>';
+            });
+        }
+
+        // Xử lý URL input: nếu người dùng thay đổi URL input, cập nhật poster URL
+        posterUrlInput.addEventListener('blur', function() {
+            if (this.value.trim() !== '') {
+                posterUrl.value = this.value;
+                posterPreview.src = this.value;
+                posterPreview.style.display = 'block';
+                uploadStatus.innerHTML = '';
+            }
+        });
+    </script>
 </body>
 </html>

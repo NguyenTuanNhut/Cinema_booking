@@ -31,6 +31,19 @@
                         <li><a class="dropdown-item" href="/admin/showtimes">Quản lý Suất chiếu</a></li>
                     </ul>
                 </li>
+
+                <!-- Menu cho STAFF -->
+                <li class="nav-item dropdown" sec:authorize="hasAnyAuthority('ROLE_STAFF', 'STAFF')">
+                    <a class="nav-link dropdown-toggle text-success font-weight-bold" href="#" id="staffDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                         NHÂN VIÊN
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="staffDropdown">
+                        <li><a class="dropdown-item" href="/staff/pending-bookings">📋 Đơn Chờ Xác Nhận</a></li>
+                        <li><a class="dropdown-item" href="/staff/bookings">🔍 Tìm Kiếm & Xác Nhận</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/staff">🏠 Dashboard Nhân Viên</a></li>
+                    </ul>
+                </li>
             </ul>
 
             <div class="navbar-nav ms-auto">
@@ -38,6 +51,7 @@
                     Chào: <strong sec:authentication="name" class="text-white"></strong>
                     (<span class="small text-info" sec:authentication="principal.authorities"></span>)
                 </span>
+                <a class="nav-link" href="/profile">Hồ sơ</a>
                 <a class="nav-link" href="/bookings/history">Lịch sử vé</a>
                 <form th:action="@{/logout}" method="post" class="d-inline">
                     <button type="submit" class="btn btn-outline-light btn-sm ms-2">Đăng xuất</button>

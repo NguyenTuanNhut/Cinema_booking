@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "bookings")
@@ -31,4 +32,13 @@ public class Booking extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "showtime_id")
     private Showtime showtime;
+
+    @ManyToOne
+    @JoinColumn(name = "confirmed_by_user_id")
+    private User confirmedBy;
+
+    private LocalDateTime confirmedAt;
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Ticket> tickets;
 }

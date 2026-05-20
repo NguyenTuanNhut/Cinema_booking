@@ -1,5 +1,6 @@
 package com.cinema.booking.service.impl;
 
+import com.cinema.booking.dto.request.ProfileDto;
 import com.cinema.booking.entity.Profile;
 import com.cinema.booking.entity.User;
 import com.cinema.booking.repository.ProfileRepository;
@@ -26,15 +27,15 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @Transactional
-    public void updateProfile(String email, Profile updatedProfile) {
+    public void updateProfile(String email, ProfileDto updatedProfile) {
         Profile profile = getProfileByEmail(email);
-        
+
         profile.setFullName(updatedProfile.getFullName());
         profile.setPhone(updatedProfile.getPhone());
         profile.setAddress(updatedProfile.getAddress());
         profile.setBirthday(updatedProfile.getBirthday());
         profile.setAvatar(updatedProfile.getAvatar());
-        
+
         profileRepository.save(profile);
     }
 }

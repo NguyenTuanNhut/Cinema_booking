@@ -3,6 +3,21 @@
 <head>
     <title>Quản lý phim</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .deleted-row {
+            opacity: 0.6;
+            background-color: #f5f5f5;
+            text-decoration: line-through;
+        }
+        .deleted-badge {
+            background-color: #dc3545;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+    </style>
 </head>
 <body class="container mt-5">
     <div class="d-flex justify-content-between mb-4">
@@ -17,19 +32,33 @@
                 <th>Tiêu đề</th>
                 <th>Thể loại</th>
                 <th>Thời lượng</th>
+                <th>Trạng thái</th>
                 <th>Hành động</th>
             </tr>
         </thead>
         <tbody>
-            <tr th:each="m : ${movies}">
+            <tr th:each="m : ${movies}" th:classappend="${!m.active ? 'deleted-row' : ''}">
                 <td th:text="${m.id}"></td>
-                <td th:text="${m.title}"></td>
+                <td>
+                    <span th:text="${m.title}"></span>
+                    <span th:if="${!m.active}" class="deleted-badge">Đã xóa</span>
+                </td>
                 <td th:text="${m.genre != null ? m.genre.name : ''}"></td>
                 <td th:text="${m.duration} + ' phút'"></td>
                 <td>
-                    <a th:href="@{'/admin/movies/edit/' + ${m.id}}" class="btn btn-sm btn-primary">Sửa</a>
-                    <a th:href="@{'/admin/movies/delete/' + ${m.id}}" class="btn btn-sm btn-danger"
-                       onclick="return confirm('Xóa phim này?')">Xóa</a>
+                    <span th:if="${m.active}" class="badge bg-success">Hoạt động</span>
+                    <span th:unless="${m.active}" class="badge bg-danger">Đã xóa</span>
+                </td>
+                <td>
+                    <!-- Nút Sửa chỉ dành cho phim active -->
+                    <a th:if="${m.active}" th:href="@{'/admin/movies/edit/' + ${m.id}}" class="btn btn-sm btn-primary">Sửa</a>
+
+                    <!-- Nút Xóa/Khôi phục -->
+                    <a th:if="${m.active}" th:href="@{'/admin/movies/delete/' + ${m.id}}" class="btn btn-sm btn-danger"
+                       onclick="return confirm('Xóa phim này? (Showtimes liên kết sẽ không bị ảnh hưởng)')">Xóa</a>
+
+                    <a th:unless="${m.active}" th:href="@{'/admin/movies/restore/' + ${m.id}}" class="btn btn-sm btn-warning"
+                       onclick="return confirm('Khôi phục phim này?')">Khôi phục</a>
                 </td>
             </tr>
         </tbody>

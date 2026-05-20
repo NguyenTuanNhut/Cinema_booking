@@ -34,6 +34,7 @@ public class DataInitializer implements CommandLineRunner {
         seedRoomsAndSeats();
         forceCreateAdmin("admin@gmail.com", "admin123");
         forceCreateAdmin("admin2@gmail.com", "admin123");
+        forceCreateStaff("staff@gmail.com", "staff123");
         seedMoviesAndShowtimes();
     }
 
@@ -101,6 +102,31 @@ public class DataInitializer implements CommandLineRunner {
             profileRepository.save(profile);
         }
         System.out.println(">>> Force Update Admin: " + email + " / " + password);
+    }
+
+    private void forceCreateStaff(String email, String password) {
+        Role staffRole = roleRepository.findByName("ROLE_STAFF").orElseThrow();
+        Optional<User> existingUser = userRepository.findByEmail(email);
+        User staff;
+        if (existingUser.isPresent()) {
+            staff = existingUser.get();
+        } else {
+            staff = new User();
+            staff.setUsername(email.split("@")[0]);
+            staff.setEmail(email);
+        }
+
+        staff.setPassword(passwordEncoder.encode(password));
+        staff.setRole(staffRole);
+        User savedStaff = userRepository.save(staff);
+
+        if (!profileRepository.findByUser(savedStaff).isPresent()) {
+            Profile profile = new Profile();
+            profile.setUser(savedStaff);
+            profile.setFullName("Staff " + staff.getUsername());
+            profileRepository.save(profile);
+        }
+        System.out.println(">>> Force Create Staff: " + email + " / " + password);
     }
 
     private void seedMoviesAndShowtimes() {
