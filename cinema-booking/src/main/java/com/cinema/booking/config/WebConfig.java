@@ -11,8 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Serve folder uploads như static folder
-        // URL: /uploads/movies/filename.jpg -> file://uploads/movies/filename.jpg
+
         
         String uploadsPath = new File("uploads").getAbsolutePath();
         
